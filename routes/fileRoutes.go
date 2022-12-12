@@ -28,7 +28,7 @@ func UploadFileEndpoint(w http.ResponseWriter, r *http.Request, chats map[string
 	// parse form data
 	err := r.ParseMultipartForm(32 << 20)
 	if err != nil {
-		utils.SendErrorMessage(w, "Invalid input")
+		utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 

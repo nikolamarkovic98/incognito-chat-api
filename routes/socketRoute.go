@@ -31,7 +31,7 @@ func WebSocketEndpoint(w http.ResponseWriter, r *http.Request, chats map[string]
 	if chat, exists := chats[chatId]; exists {
 		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			utils.SendErrorMessage(w, "Error creating socket")
+			utils.SendErrorMessage(w, "Error creating socket", http.StatusServiceUnavailable)
 			return
 		}
 

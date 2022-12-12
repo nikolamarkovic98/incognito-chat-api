@@ -16,20 +16,29 @@ func Register(w http.ResponseWriter, r *http.Request, chats map[string]types.Cha
 	var input RegisterInput
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
-		utils.SendErrorMessage(w, "Invalid input")
+		utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	if input.ChatId == "" || input.Username == "" {
+		utils.SendErrorMessage(w, "Inalid input", http.StatusBadRequest)
 		return
 	}
 
 	var isUsernameTaken = false
 
-	// loop through connections to find match
 	if chat, exists := chats[input.ChatId]; exists {
+		// loop through connections to find match
 		for _, chat := range chat.Connections {
 			if chat.Username == input.Username {
 				isUsernameTaken = true
 				break
 			}
 		}
+	} else {
+		// chat doesnt exist
+		utils.SendErrorMessage(w, "Inalid input", http.StatusNotFound)
+		return
 	}
 
 	utils.SendSuccessMessage(w, isUsernameTaken)

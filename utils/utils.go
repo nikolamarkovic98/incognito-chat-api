@@ -54,9 +54,9 @@ func SaveFile(chatId string, file multipart.File, fileHeader multipart.FileHeade
 	return filename, nil
 }
 
-func SendErrorMessage(w http.ResponseWriter, message any) {
+func SendErrorMessage(w http.ResponseWriter, message any, status int) {
 	response, _ := json.Marshal(message)
-	w.WriteHeader(http.StatusBadRequest)
+	w.WriteHeader(status)
 	w.Write(response)
 }
 

@@ -26,21 +26,21 @@ type CreateChatRouteOutput struct {
 	Messages  []types.Message `json:"messages"`
 }
 
-func CreateChatRoute(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat) {
+func CreateChatRoute(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat) {	
 	var input CreateChatRouteInput
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
-		utils.SendErrorMessage(w, "Invalid input")
+		utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
 	if 10 > input.Duration || 60 < input.Duration || len(input.Name) == 0 {
-		utils.SendErrorMessage(w, "Invalid input")
+		utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
 	if utils.IsValidDate(input.CreatedAt) {
-		utils.SendErrorMessage(w, "Invalid input")
+		utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
 
@@ -99,6 +99,6 @@ func GetChat(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat
 		}
 		utils.SendSuccessMessage(w, output)
 	} else {
-		utils.SendErrorMessage(w, "Invalid input")
+		utils.SendErrorMessage(w, "Invalid input", http.StatusNotFound)
 	}
 }
