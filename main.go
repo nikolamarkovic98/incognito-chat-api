@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"incognito-chat-api/middlewares"
@@ -52,5 +53,5 @@ func main() {
 	setupRoutes(router)
 
 	fmt.Println("Starting started on port " + port)
-	http.ListenAndServe(port, router)
+	log.Fatal(http.ListenAndServe(port, router))
 }

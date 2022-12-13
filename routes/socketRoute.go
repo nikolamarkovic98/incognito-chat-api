@@ -63,14 +63,15 @@ func handleSocket(connection types.Connection, chatId string, chats map[string]t
 			return
 		}
 
+		chat := chats[chatId]
+
 		// user left chat
 		if messageType == -1 {
-			index := getConnectionIndexByID(chats[chatId], connection.ID)
+			index := utils.GetIndexById(chat.Connections, connection.ID)
 			destroyConnection(chats, chatId, index)
 			return
 		}
 
-		chat := chats[chatId]
 		var input types.WS_Signal
 
 		// parse meessage
@@ -94,35 +95,23 @@ func handleSocket(connection types.Connection, chatId string, chats map[string]t
 					chat.Messages[i] = message
 				}
 			}
+		} else if eventType == types.DELETE {
+			messageIndex := utils.GetIndexById(chat.Messages, message.ID)
+			chat.Messages = utils.RemoveIndexFromSlice(chat.Messages, messageIndex)
 		}
 
 		// update current chat with new data
 		chats[chatId] = chat
 
 		// send message to everyone else in the chat
-		utils.SocketResponse(chat, input)
+		utils.SocketResponse(chat.Connections, input)
 	}
-}
-
-// returns connection index, if not found -1
-func getConnectionIndexByID(chat types.Chat, socketId string) int {
-	for index, chatConnection := range chat.Connections {
-		if chatConnection.ID == socketId {
-			return index
-		}
-	}
-
-	return -1
 }
 
 // closes connection and updates chat data
 func destroyConnection(chats map[string]types.Chat, chatId string, connIndex int) {
 	chat := chats[chatId]
-
 	chat.Connections[connIndex].Conn.Close()
-	connsLen := len(chat.Connections)
-	chat.Connections[connIndex] = chat.Connections[connsLen-1]
-	chat.Connections = chat.Connections[:connsLen-1]
-
+	chat.Connections = utils.RemoveIndexFromSlice(chat.Connections, connIndex)
 	chats[chatId] = chat
 }

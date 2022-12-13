@@ -66,9 +66,9 @@ func SendSuccessMessage(w http.ResponseWriter, message any) {
 	w.Write(response)
 }
 
-func SocketResponse(chat types.Chat, message types.WS_Signal) {
+func SocketResponse(connections []types.Connection, message types.WS_Signal) {
 	response, _ := json.Marshal(message)
-	for _, connection := range chat.Connections {
+	for _, connection := range connections {
 		if err := connection.Conn.WriteMessage(1, response); err != nil {
 			continue
 		}
@@ -76,6 +76,30 @@ func SocketResponse(chat types.Chat, message types.WS_Signal) {
 }
 
 func IsValidDate(date string) bool {
-	_, err := time.Parse("Mon Jan 02 2006 15:04:05 GMT-0700 (Central European Standard Time)", date)
+	var testDate = "Mon Jan 02 2006 15:04:05 GMT-0700 (Central European Standard Time)"
+	_, err := time.Parse(testDate, date)
 	return err != nil
+}
+
+type ID interface {
+	GetId() string
+}
+
+// returns connection index, if not found -1
+func GetIndexById[T ID](slice []T, id string) int {
+	for index, el := range slice {
+		if el.GetId() == id {
+			return index
+		}
+	}
+
+	return -1
+}
+
+// removes element from slice by provided index
+func RemoveIndexFromSlice[sliceType any](slice []sliceType, index int) []sliceType {
+	sliceLen := len(slice)
+	slice[index] = slice[sliceLen-1]
+	slice = slice[:sliceLen-1]
+	return slice
 }

@@ -73,5 +73,5 @@ func UploadFileEndpoint(w http.ResponseWriter, r *http.Request, chats map[string
 	chats[chatId] = chat
 
 	// sending everyone uploaded file...
-	utils.SocketResponse(chat, output)
+	utils.SocketResponse(chat.Connections, output)
 }

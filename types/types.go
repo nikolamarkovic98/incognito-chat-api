@@ -5,7 +5,6 @@ import "github.com/gorilla/websocket"
 const (
 	CREATE = iota
 	LIKE   = iota
-	UPDATE = iota
 	DELETE = iota
 )
 
@@ -36,4 +35,12 @@ type Message struct {
 type WS_Signal struct {
 	EventType int     `json:"eventType"`
 	Message   Message `json:"message"`
+}
+
+func (conn Connection) GetId() string {
+	return conn.ID
+}
+
+func (message Message) GetId() string {
+	return message.ID
 }
