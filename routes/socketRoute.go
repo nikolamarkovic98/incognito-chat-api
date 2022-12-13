@@ -92,7 +92,7 @@ func handleSocket(connection types.Connection, chatId string, chats map[string]t
 		} else if eventType == types.LIKE {
 			for i, loopMessage := range chat.Messages {
 				if loopMessage.ID == message.ID {
-					chat.Messages[i] = message
+					chat.Messages[i].Likes = message.Likes
 				}
 			}
 		} else if eventType == types.DELETE {

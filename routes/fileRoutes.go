@@ -18,6 +18,7 @@ func GetFileEndpoint(w http.ResponseWriter, r *http.Request) {
 	filePath := fmt.Sprintf("./uploads/%s/%s", chatId, fileName)
 
 	// send/serve file
+	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
 	http.ServeFile(w, r, filePath)
 }
 

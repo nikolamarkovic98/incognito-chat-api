@@ -23,13 +23,13 @@ type Chat struct {
 }
 
 type Message struct {
-	ID     string   `json:"id"`
-	Type   string   `json:"type"`
-	Text   string   `json:"text"`
-	File   string   `json:"file"`
-	SentBy string   `json:"sentBy"`
-	SentAt string   `json:"sentAt"`
-	Likes  []string `json:"likes"`
+	ID       string   `json:"id"`
+	Type     string   `json:"type"`
+	Text     string   `json:"text"`
+	File     string   `json:"file"`
+	SentBy   string   `json:"sentBy"`
+	SentAt   string   `json:"sentAt"`
+	Likes    []string `json:"likes"`
 }
 
 type WS_Signal struct {
