@@ -102,7 +102,7 @@ func handleSocket(connection types.Connection, chatId string, chats map[string]t
 			if eventType == types.CREATE {
 				message.ID = utils.Genuuid()
 				chat.Messages = append(chat.Messages, message)
-				// input.Message = message
+				input.Message = message
 			} else if eventType == types.LIKE {
 				for i, loopMessage := range chat.Messages {
 					if loopMessage.ID == message.ID {
