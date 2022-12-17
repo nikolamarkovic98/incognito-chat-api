@@ -53,8 +53,9 @@ func WebSocketEndpoint(w http.ResponseWriter, r *http.Request, chats map[string]
 
 func handleSocket(connection types.Connection, chatId string, chats map[string]types.Chat) {
 	socket := connection.Conn
+	isSocketActive := true
 
-	for {
+	for isSocketActive {
 		// listen for incoming messages/events
 		messageType, rawMessage, err := socket.ReadMessage()
 
@@ -64,41 +65,64 @@ func handleSocket(connection types.Connection, chatId string, chats map[string]t
 		}
 
 		chat := chats[chatId]
-
-		// user left chat
-		if messageType == -1 {
-			index := utils.GetIndexById(chat.Connections, connection.ID)
-			destroyConnection(chats, chatId, index)
-			return
-		}
-
 		var input types.WS_Signal
 
-		// parse meessage
-		err = json.Unmarshal([]byte(rawMessage), &input)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+		if messageType == -1 {
+			// user left chat
+			typingIndex := utils.GetIndex(chat.UsersTyping, connection.Username)
+			if typingIndex != -1 {
+				chat.UsersTyping = utils.RemoveIndexFromSlice(chat.UsersTyping, typingIndex)
+			}
 
-		var eventType = input.EventType
-		var message = input.Message
+			// remove connection and destroy socket
+			connectionIndex := utils.GetIndexById(chat.Connections, connection.ID)
+			destroyConnection(chats, chatId, connectionIndex)
 
-		// process signal based on eventType
-		if eventType == types.CREATE {
-			message.ID = utils.Genuuid()
-			chat.Messages = append(chat.Messages, message)
-			input.Message = message
-		} else if eventType == types.LIKE {
-			for i, loopMessage := range chat.Messages {
-				if loopMessage.ID == message.ID {
-					chat.Messages[i].Likes = message.Likes
+			// prepare input
+			input.EventType = types.TYPING
+			input.Message = types.Message{
+				SentBy: connection.Username,
+			}
+
+			isSocketActive = false
+		} else {
+			// all okay
+
+			// parse meessage
+			err = json.Unmarshal([]byte(rawMessage), &input)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+	
+			var eventType = input.EventType
+			var message = input.Message
+	
+			// process signal based on eventType
+			if eventType == types.CREATE {
+				message.ID = utils.Genuuid()
+				chat.Messages = append(chat.Messages, message)
+				// input.Message = message
+			} else if eventType == types.LIKE {
+				for i, loopMessage := range chat.Messages {
+					if loopMessage.ID == message.ID {
+						chat.Messages[i].Likes = message.Likes
+					}
+				}
+			} else if eventType == types.DELETE {
+				messageIndex := utils.GetIndexById(chat.Messages, message.ID)
+				chat.Messages = utils.RemoveIndexFromSlice(chat.Messages, messageIndex)
+			} else if eventType == types.TYPING {
+				if message.Text == "" {
+					index := utils.GetIndex(chat.UsersTyping, message.SentBy)
+					chat.UsersTyping = utils.RemoveIndexFromSlice(chat.UsersTyping, index)
+				} else {
+					chat.UsersTyping = append(chat.UsersTyping, message.SentBy)
 				}
 			}
-		} else if eventType == types.DELETE {
-			messageIndex := utils.GetIndexById(chat.Messages, message.ID)
-			chat.Messages = utils.RemoveIndexFromSlice(chat.Messages, messageIndex)
+
 		}
+
 
 		// update current chat with new data
 		chats[chatId] = chat

@@ -81,6 +81,16 @@ func IsValidDate(date string) bool {
 	return err != nil
 }
 
+func GetIndex[sliceType string | int](slice []sliceType, value sliceType) int {
+	for index, el := range slice {
+		if el == value {
+			return index
+		}
+	}
+
+	return -1
+}
+
 type ID interface {
 	GetId() string
 }

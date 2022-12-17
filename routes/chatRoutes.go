@@ -19,11 +19,12 @@ type CreateChatRouteInput struct {
 }
 
 type CreateChatRouteOutput struct {
-	ID        string          `json:"id"`
-	CreatedAt string          `json:"createdAt"`
-	Name      string          `json:"name"`
-	Duration  int             `json:"duration"`
-	Messages  []types.Message `json:"messages"`
+	ID          string          `json:"id"`
+	CreatedAt   string          `json:"createdAt"`
+	Name        string          `json:"name"`
+	Duration    int             `json:"duration"`
+	Messages    []types.Message `json:"messages"`
+	UsersTyping []string 	    `json:"usersTyping"`
 }
 
 func CreateChatRoute(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat) {	
@@ -46,17 +47,24 @@ func CreateChatRoute(w http.ResponseWriter, r *http.Request, chats map[string]ty
 
 	chatId := utils.Genuuid()
 
+	messages := []types.Message{}
+	usersTyping := []string{}
+
 	chats[chatId] = types.Chat{
-		Name:      input.Name,
-		Duration:  input.Duration,
-		CreatedAt: input.CreatedAt,
+		CreatedAt:   input.CreatedAt,
+		Duration:    input.Duration,
+		Name:        input.Name,
+		Messages:    messages,
+		UsersTyping: usersTyping,
 	}
 
 	output := CreateChatRouteOutput{
-		ID:        chatId,
-		CreatedAt: input.CreatedAt,
-		Name:      input.Name,
-		Duration:  input.Duration,
+		ID:          chatId,
+		CreatedAt:   input.CreatedAt,
+		Duration:    input.Duration,
+		Name:        input.Name,
+		Messages:    messages,
+		UsersTyping: usersTyping,
 	}
 
 	// start chat timer
@@ -79,11 +87,12 @@ func removeChat(chats map[string]types.Chat, chatId string, duration int) {
 }
 
 type GetChatOutput struct {
-	ID        string          `json:"id"`
-	CreatedAt string          `json:"createdAt"`
-	Name      string          `json:"name"`
-	Duration  int             `json:"duration"`
-	Messages  []types.Message `json:"messages"`
+	ID          string          `json:"id"`
+	CreatedAt   string          `json:"createdAt"`
+	Name        string          `json:"name"`
+	Duration    int             `json:"duration"`
+	UsersTyping []string        `json:"usersTyping"`
+	Messages    []types.Message `json:"messages"`
 }
 
 func GetChat(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat) {
@@ -91,11 +100,12 @@ func GetChat(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat
 
 	if chat, exists := chats[chatId]; exists {
 		output := GetChatOutput{
-			ID:        chatId,
-			CreatedAt: chat.CreatedAt,
-			Name:      chat.Name,
-			Duration:  chat.Duration,
-			Messages:  chat.Messages,
+			ID:          chatId,
+			CreatedAt:   chat.CreatedAt,
+			Name:        chat.Name,
+			Duration:    chat.Duration,
+			UsersTyping: chat.UsersTyping,
+			Messages:    chat.Messages,
 		}
 		utils.SendSuccessMessage(w, output)
 	} else {

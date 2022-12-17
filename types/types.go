@@ -6,6 +6,7 @@ const (
 	CREATE = iota
 	LIKE   = iota
 	DELETE = iota
+	TYPING = iota
 )
 
 type Connection struct {
@@ -18,6 +19,7 @@ type Chat struct {
 	Name        string
 	CreatedAt   string
 	Duration    int
+	UsersTyping []string
 	Messages    []Message
 	Connections []Connection
 }
