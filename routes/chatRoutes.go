@@ -15,6 +15,7 @@ import (
 type CreateChatRouteInput struct {
 	CreatedAt string `json:"createdAt"`
 	Name      string `json:"name"`
+	Password  string `json:"password"`
 	Duration  int    `json:"duration"`
 }
 
@@ -35,7 +36,9 @@ func CreateChatRoute(w http.ResponseWriter, r *http.Request, chats map[string]ty
 		return
 	}
 
-	if 10 > input.Duration || 60 < input.Duration || len(input.Name) == 0 {
+	nameLen := len(input.Name)
+	if 10 > input.Duration || 60 < input.Duration || 
+	   nameLen == 0 || nameLen > 20 {
 		utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
@@ -52,6 +55,7 @@ func CreateChatRoute(w http.ResponseWriter, r *http.Request, chats map[string]ty
 	chats[chatId] = types.Chat{
 		CreatedAt:   input.CreatedAt,
 		Duration:    input.Duration,
+		Password: 	 input.Password,
 		Name:        input.Name,
 		Messages:    messages,
 		UsersTyping: usersTyping,

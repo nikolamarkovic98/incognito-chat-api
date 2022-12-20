@@ -17,6 +17,7 @@ type Connection struct {
 
 type Chat struct {
 	Name        string
+	Password    string
 	CreatedAt   string
 	Duration    int
 	UsersTyping []string
