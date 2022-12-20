@@ -1,12 +1,9 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
-	"incognito-chat-api/types"
 	"io"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -52,27 +49,6 @@ func SaveFile(chatId string, file multipart.File, fileHeader multipart.FileHeade
 	createdFile.Close()
 
 	return filename, nil
-}
-
-func SendErrorMessage(w http.ResponseWriter, message any, status int) {
-	response, _ := json.Marshal(message)
-	w.WriteHeader(status)
-	w.Write(response)
-}
-
-func SendSuccessMessage(w http.ResponseWriter, message any) {
-	response, _ := json.Marshal(message)
-	w.WriteHeader(http.StatusOK)
-	w.Write(response)
-}
-
-func SocketResponse(connections []types.Connection, message types.WS_Signal) {
-	response, _ := json.Marshal(message)
-	for _, connection := range connections {
-		if err := connection.Conn.WriteMessage(1, response); err != nil {
-			continue
-		}
-	}
 }
 
 func IsValidDate(date string) bool {

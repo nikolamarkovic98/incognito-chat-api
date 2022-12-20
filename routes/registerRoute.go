@@ -12,6 +12,11 @@ type RegisterInput struct {
 	Username string `json:"username"`
 }
 
+type RegisterOutput struct {
+	IsUsernameTaken bool   `json:"isUsernameTaken"`
+	Token 			string `json:"token"`
+}
+
 func Register(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat) {
 	var input RegisterInput
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -25,8 +30,8 @@ func Register(w http.ResponseWriter, r *http.Request, chats map[string]types.Cha
 		return
 	}
 
+	
 	var isUsernameTaken = false
-
 	if chat, exists := chats[input.ChatId]; exists {
 		// loop through connections to find match
 		for _, chat := range chat.Connections {
@@ -41,5 +46,12 @@ func Register(w http.ResponseWriter, r *http.Request, chats map[string]types.Cha
 		return
 	}
 
-	utils.SendSuccessMessage(w, isUsernameTaken)
+	token := utils.GenJWTToken(input.Username, input.ChatId)
+
+	output := RegisterOutput{
+		IsUsernameTaken: isUsernameTaken,
+		Token: token,
+	}
+
+	utils.SendSuccessMessage(w, output)
 }

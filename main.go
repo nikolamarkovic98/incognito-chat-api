@@ -11,6 +11,7 @@ import (
 	"incognito-chat-api/utils"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 var chats = make(map[string]types.Chat)
@@ -24,7 +25,7 @@ func setupRoutes(router *mux.Router) {
 	// get single chat
 	router.HandleFunc("/api/chat/{chatId}", func(w http.ResponseWriter, r *http.Request) {
 		routes.GetChat(w, r, chats)
-	}).Methods("GET")
+	}).Methods("GET", "OPTIONS")
 
 	// create chat
 	router.HandleFunc("/api/chat", func(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +47,12 @@ func setupRoutes(router *mux.Router) {
 }
 
 func main() {
+	// load environment variables
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading env file")
+	}
+
 	port := utils.GetPort()
 	router := mux.NewRouter()
 

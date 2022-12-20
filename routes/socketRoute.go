@@ -26,24 +26,22 @@ var upgrader = websocket.Upgrader{
 func WebSocketEndpoint(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat) {
 	// establishes websocket connection and return pointer to socket or an error
 	chatId := mux.Vars(r)["chatId"]
-	username := mux.Vars(r)["username"]
-
+	
 	if chat, exists := chats[chatId]; exists {
 		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			utils.SendErrorMessage(w, "Error creating socket", http.StatusServiceUnavailable)
 			return
 		}
-
-		connId := utils.Genuuid()
+		
+		username := mux.Vars(r)["username"]
 		conn := types.Connection{
-			ID:       connId,
+			ID:       utils.Genuuid(),
 			Username: username,
 			Conn:     *socket,
 		}
 
 		chat.Connections = append(chat.Connections, conn)
-
 		chats[chatId] = chat
 
 		// creating new goroutine for each ws connection
@@ -53,38 +51,51 @@ func WebSocketEndpoint(w http.ResponseWriter, r *http.Request, chats map[string]
 
 func handleSocket(connection types.Connection, chatId string, chats map[string]types.Chat) {
 	socket := connection.Conn
-	isSocketActive := true
 
-	for isSocketActive {
+	// first thing when ws connection is established
+	// we send token from client and verify it
+	// if its okay, we proceed into socket loop,
+	// otherwise connection is destroyed which redirects client to home
+	var token string
+	_, rawMessage, _ := socket.ReadMessage()
+	json.Unmarshal([]byte(rawMessage), &token)
+	_, err := utils.ParseJWTToken(token, chatId)
+	if err != nil {
+		// remove connection and destroy socket
+		chat := chats[chatId]
+		chat.Connections = destroyConnection(chat.Connections, connection)
+		chats[chatId] = chat
+		return
+	}
+
+	listening := true
+	for listening {
 		// listen for incoming messages/events
 		messageType, rawMessage, err := socket.ReadMessage()
-
-		// chat has ended
+		
 		if _, exists := chats[chatId]; !exists {
+			// chat has ended
 			return
 		}
 
-		chat := chats[chatId]
 		var input types.WS_Signal
+		chat := chats[chatId]
 
 		if messageType == -1 {
 			// user left chat
+
+			// filter users typing
 			typingIndex := utils.GetIndex(chat.UsersTyping, connection.Username)
 			if typingIndex != -1 {
 				chat.UsersTyping = utils.RemoveIndexFromSlice(chat.UsersTyping, typingIndex)
 			}
 
 			// remove connection and destroy socket
-			connectionIndex := utils.GetIndexById(chat.Connections, connection.ID)
-			destroyConnection(chats, chatId, connectionIndex)
-
-			// prepare input
+			chat.Connections = destroyConnection(chat.Connections, connection)
 			input.EventType = types.TYPING
-			input.Message = types.Message{
-				SentBy: connection.Username,
-			}
+			input.Message.SentBy = connection.Username
 
-			isSocketActive = false
+			listening = false
 		} else {
 			// all okay
 
@@ -92,7 +103,7 @@ func handleSocket(connection types.Connection, chatId string, chats map[string]t
 			err = json.Unmarshal([]byte(rawMessage), &input)
 			if err != nil {
 				log.Println(err)
-				return
+				continue
 			}
 	
 			var eventType = input.EventType
@@ -111,18 +122,22 @@ func handleSocket(connection types.Connection, chatId string, chats map[string]t
 				}
 			} else if eventType == types.DELETE {
 				messageIndex := utils.GetIndexById(chat.Messages, message.ID)
-				chat.Messages = utils.RemoveIndexFromSlice(chat.Messages, messageIndex)
+				if messageIndex != -1 {
+					chat.Messages = utils.RemoveIndexFromSlice(chat.Messages, messageIndex)
+				}
 			} else if eventType == types.TYPING {
 				if message.Text == "" {
-					index := utils.GetIndex(chat.UsersTyping, message.SentBy)
-					chat.UsersTyping = utils.RemoveIndexFromSlice(chat.UsersTyping, index)
+					// user not typing
+					userTypingIndex := utils.GetIndex(chat.UsersTyping, message.SentBy)
+					if userTypingIndex != -1 {
+						chat.UsersTyping = utils.RemoveIndexFromSlice(chat.UsersTyping, userTypingIndex)
+					}
 				} else {
+					// user typing
 					chat.UsersTyping = append(chat.UsersTyping, message.SentBy)
 				}
 			}
-
 		}
-
 
 		// update current chat with new data
 		chats[chatId] = chat
@@ -132,10 +147,8 @@ func handleSocket(connection types.Connection, chatId string, chats map[string]t
 	}
 }
 
-// closes connection and updates chat data
-func destroyConnection(chats map[string]types.Chat, chatId string, connIndex int) {
-	chat := chats[chatId]
-	chat.Connections[connIndex].Conn.Close()
-	chat.Connections = utils.RemoveIndexFromSlice(chat.Connections, connIndex)
-	chats[chatId] = chat
+func destroyConnection(connections []types.Connection, connection types.Connection) []types.Connection {
+	connection.Conn.Close()
+	connectionIndex := utils.GetIndexById(connections, connection.ID)
+	return utils.RemoveIndexFromSlice(connections, connectionIndex)
 }

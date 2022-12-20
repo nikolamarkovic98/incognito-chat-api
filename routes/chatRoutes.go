@@ -46,7 +46,6 @@ func CreateChatRoute(w http.ResponseWriter, r *http.Request, chats map[string]ty
 	}
 
 	chatId := utils.Genuuid()
-
 	messages := []types.Message{}
 	usersTyping := []string{}
 
@@ -99,6 +98,12 @@ func GetChat(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat
 	chatId := mux.Vars(r)["chatId"]
 
 	if chat, exists := chats[chatId]; exists {
+		jwtToken := utils.GetJWTFromHeader(r, chatId)
+		if jwtToken == "" {
+			utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
+			return
+		}
+
 		output := GetChatOutput{
 			ID:          chatId,
 			CreatedAt:   chat.CreatedAt,
@@ -107,6 +112,7 @@ func GetChat(w http.ResponseWriter, r *http.Request, chats map[string]types.Chat
 			UsersTyping: chat.UsersTyping,
 			Messages:    chat.Messages,
 		}
+		
 		utils.SendSuccessMessage(w, output)
 	} else {
 		utils.SendErrorMessage(w, "Invalid input", http.StatusNotFound)
