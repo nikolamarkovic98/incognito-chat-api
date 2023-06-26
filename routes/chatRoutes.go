@@ -43,10 +43,10 @@ func CreateChatRoute(w http.ResponseWriter, r *http.Request, chats map[string]ty
 		return
 	}
 
-	if utils.IsValidDate(input.CreatedAt) {
-		utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
-		return
-	}
+	// if utils.IsValidDate(input.CreatedAt) {
+	// 	utils.SendErrorMessage(w, "Invalid input", http.StatusBadRequest)
+	// 	return
+	// }
 
 	chatId := utils.Genuuid()
 	messages := []types.Message{}
